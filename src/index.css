@@ -1,0 +1,16 @@
+*{
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+body{
+    font-family: sans-serif;
+}
+a{
+  margin: 5px;
+  text-decoration: none;
+}
+.active{
+  color: #61dafb;
+  border-bottom: 2px solid #61dafb;;
+}
