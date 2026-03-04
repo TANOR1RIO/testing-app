@@ -13,7 +13,9 @@ body{
   width: 10em;
   height: 10em;
 }
-
+button,fieldset{
+  border: none;
+}
 .pencil__body1,
 .pencil__body2,
 .pencil__body3,

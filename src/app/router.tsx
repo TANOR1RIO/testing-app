@@ -4,10 +4,10 @@ import StudentLayout from '../layouts/StudentLayout';
 import AdminLayout from '../layouts/AdminLayout';
 import LoginPage from '../pages/login/LoginPage';
 import NotFoundPage from '../pages/error/NotFoundPage';
-// import { StudentTests } from '../pages/student/StudentTests';
 import StudentPage from '../pages/student/StudentPage';
 import { StudentTestPage } from '../pages/student/StudentTestPage';
 import { StudentProfilePage } from '../pages/student/StudentProfilePage';
+import { StudentRunTests } from '../pages/student/StudentRunTest';
 
 export const router = createBrowserRouter([
     {
@@ -26,10 +26,10 @@ export const router = createBrowserRouter([
                     path: "tests", 
                     element: <StudentTestPage /> 
                 },
-                // {
-                //     path: "test/:id", 
-                //     element: <StudentTestPage />
-                // },
+                {
+                    path: "tests/:id",  // ← Измените с "test/:id" на "tests/:id"
+                    element: <StudentRunTests />
+                },
                 {
                     path: "statistics", 
                     element: <h2>Статичтика студента</h2>
