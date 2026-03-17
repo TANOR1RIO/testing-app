@@ -6,7 +6,7 @@ import { Loader } from '../../icon/icons';
 
 const Cards = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(500px, 1fr)); 
   gap: 24px;
   padding: 20px;
 `;
@@ -18,14 +18,14 @@ const LoaderContainer = styled.div`
   min-height: 400px;
 `;
 
-type AnswerValue = string | null;
+type AnswerValue = string | string[] | null;
 type AnswerType = 'multiple' | 'single' | 'text';
-type AnswerState = {
+export type AnswerState = {
   type: AnswerType;
   value: AnswerValue;
 };
 
-type AnswerMap = Record<number, AnswerState>;
+export type AnswerMap = Record<number, AnswerState>;
 
 export function StudentTestPage() {
   const [tests, setTests] = useState<TestItem[]>([]);

@@ -24,7 +24,7 @@ const Dialog = styled.div`
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 12px;
 `;
 
 const Head = styled.div`
@@ -36,7 +36,7 @@ const Head = styled.div`
   h2 {
     font-size: 24px;
     font-weight: bold;
-    margin: 0 0 16px 0;
+    margin: 0 0 8px 0;
     color: #222;
     text-align: center;
   }
@@ -61,7 +61,7 @@ const Head = styled.div`
 const Main = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
 
   label {
     font-size: 14px;
@@ -88,8 +88,8 @@ const Main = styled.div`
 const Foot = styled.div`
   display: flex;
   gap: 12px;
-  margin-top: 24px;
-
+  margin-top: 12px;
+  
   button {
     padding: 12px 24px;
     border: none;

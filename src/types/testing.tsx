@@ -43,4 +43,13 @@ export type Question = {
     options: string[];
     score: number;
     shuffle: boolean;
+    correct:string| string[];
 };
+
+export type AnswerValue = string[] | null | string;
+export type AnswerType = 'multiple' | 'single' | 'text';
+export type AnswerState = {
+    type: AnswerType;
+    value: AnswerValue;
+};
+export type AnswersMap = Record<number, AnswerState>;

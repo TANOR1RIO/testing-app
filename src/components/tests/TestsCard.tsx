@@ -1,16 +1,75 @@
 import styled from '@emotion/styled';
 import type { TestItem, Attempt } from '../../types/testing';
 import { CalendarIcon, DoneIcon, TimeIcon } from '../../icon/icons';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { ConfirmModal } from './ConfirModal';
+
+const Card = styled.div`
+  position: relative;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px 24px 24px 32px;
+  background: #ffffff;
+  width: 100%;
+  max-width: 900px;
+`;
+
+const ScoreRibbon = styled.div`
+  position: absolute;
+  top: 0;
+  right: 32px;
+  background: linear-gradient(180deg, #e8f5ff 0%, #e8f5ff 100%);
+  border-radius: 0 0 8px 8px;
+  padding: 16px 20px 24px;
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 2px;
+  min-width: 70px;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 85%, 0 100%);
+`;
+
+const ScoreValue = styled.span`
+  color: #0e73f6;
+  font-weight: 700;
+  font-size: 26px;
+  line-height: 1;
+`;
+
+const ScoreMax = styled.span`
+  color: #0e73f6;
+  font-weight: 600;
+  font-size: 26px;
+  opacity: 0.6;
+  line-height: 1;
+  margin-top: 0;
+`;
+
+const Title = styled.h3`
+  margin: 0 0 8px 0;
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 1.4;
+  color: #09090b;
+  padding-right: 90px;
+`;
+
+const Description = styled.p`
+  margin: 0 0 16px 0;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #6b7280;
+`;
 
 const Tags = styled.div`
   display: flex;
-  gap: 5px;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
 `;
-const Card = styled.div`
-  position: relative;
-`;
+
 const Tag = styled.div`
   color: #4094f7;
   font-weight: 400;
@@ -19,37 +78,44 @@ const Tag = styled.div`
   border: 1px solid #0e73f64d;
   border-radius: 10px;
   padding: 7px 12px;
-`;
-const ContentScore = styled.div`
-  background-color: #e8f5ff;
-  border-radius: 0 0 2px 4px;
-  padding: 20px 10px 46px;
-  position: absolute;
-  top: 0;
-  right: 35px;
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%);
+  background: #f9fafb;
 `;
 
-const Score = styled.span`
-  color: #0e73f6;
-  font-weight: 600;
-  font-size: 26.4px;
-  line-height: 1;
+const MetaRow = styled.div`
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
 `;
 
-const MaxScore = styled.span`
-  color: #0e73f64d;
-  font-weight: 600;
-  font-size: 26.4px;
+const MetaBadge = styled.div<{ $variant?: 'orange' | 'blue' }>`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 13px;
   line-height: 1;
+  background: ${({ $variant }) => ($variant === 'orange' ? '#fff7ed' : '#eff6ff')};
+  color: ${({ $variant }) => ($variant === 'orange' ? '#ea580c' : '#0e73f6')};
+  border: 1px solid ${({ $variant }) => ($variant === 'orange' ? '#fed7aa' : '#bfdbfe')};
 `;
+
+const BottomRow = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 24px;
+`;
+
 const BaseButton = styled.button`
   font-weight: 600;
   font-size: 14px;
   line-height: 1.71;
   border-radius: 10px;
-  padding: 7px 22px;
-  min-width: 122px;
+  padding: 10px 24px;
+  min-width: 140px;
   cursor: pointer;
 `;
 
@@ -81,14 +147,15 @@ const SuccessBtn = styled(BaseButton)`
 
 type TestCardProp = {
   test: TestItem;
-  lastAttempt?: Attempt; // ✅ Сделали опциональным и исправили camelCase
+  lastAttempt?: Attempt;
 };
 
 export function TestCard(props: TestCardProp) {
   const { test, lastAttempt } = props;
-  console.log(lastAttempt);
 
   const navigate = useNavigate();
+  const [showModal, setShowModal] = useState(false);
+  const [modalTitle, setModalTitle] = useState('');
 
   function formatSecFromMin(seconds: number | null): string | null {
     if (!seconds) return null;
@@ -115,68 +182,105 @@ export function TestCard(props: TestCardProp) {
   function formatDateISO(date: string | null): string | null {
     if (!date) return null;
     const d = new Date(date);
-    return d.toLocaleDateString('RU');
+    return d.toLocaleDateString('ru-RU');
   }
 
-  // ✅ Добавили проверку на undefined
   const isGraded = lastAttempt?.status === 'graded';
   const scoreText = isGraded ? lastAttempt.score / 10 : null;
 
+  const hasTimeLimit = !!test.durationSec && test.durationSec > 0;
+  const hasAttemptAllowedLimit = test.attemptsAllowed === 1;
+
+  const deadline = formatDateISO(test.deadlineISO);
+  const duration = formatSecFromMin(test.durationSec);
+
   const textBtn = useMemo(() => {
     if (isGraded && test.allowRetry)
-      return { status: 'retry', label: 'Пройти заного' };
+      return { status: 'retry', label: 'Пройти заново' };
     if (isGraded && !test.allowRetry)
-      return { status: 'done', label: 'Выполненно' };
+      return { status: 'done', label: 'Выполнено' };
     return { status: 'start', label: 'Пройти' };
   }, [isGraded, test.allowRetry]);
 
-  function handleClick() {
-    if (textBtn.status === 'done') return;
+  function startTest() {
     navigate(`/student/tests/${test.id}`, {
       state: { durationSec: test.durationSec },
     });
+    setShowModal(false);
+  }
+  function handleClick() {
+    if (textBtn.status === 'done') return;
 
-    console.log(test.id);
+    let title = 'Начать тест?';
+    
+    if (hasTimeLimit && hasAttemptAllowedLimit) {
+      title = `Тест ограничен по времени ${duration}. Можно пройти только один раз. Начать?`;
+    } else if (hasTimeLimit) {
+      title = `Тест ограничен по времени ${duration}. Начать?`;
+    } if (hasAttemptAllowedLimit) {
+      title = 'Можно пройти один раз. Начать?';
+    }
+    
+    setModalTitle(title);
+    setShowModal(true);
   }
 
   return (
-    <Card>
-      <h3>{test.title}</h3>
-      <p>{test.shortDescription}</p>
-      <Tags>
-        {test.tags.map((t, i) => (
-          <Tag key={i}>{t}</Tag>
-        ))}
-      </Tags>
+    <>
+      <Card>
+        {scoreText !== null && (
+          <ScoreRibbon>
+            <ScoreValue>{scoreText}</ScoreValue>
+            <ScoreMax>/10</ScoreMax>
+          </ScoreRibbon>
+        )}
+        
+        <Title>{test.title}</Title>
+        <Description>{test.shortDescription}</Description>
+        
+        <Tags>
+          {test.tags.map((t, i) => (
+            <Tag key={i}>{t}</Tag>
+          ))}
+        </Tags>
 
-      <div>
-        <div>
-          <CalendarIcon /> {formatDateISO(test.deadlineISO)}
-        </div>
-        <div>
-          <TimeIcon /> {formatSecFromMin(test.durationSec)}
-        </div>
-      </div>
-      <div>
-        {textBtn.status === 'start' && (
-          <StartBtn onClick={() => handleClick()}>{textBtn.label}</StartBtn>
-        )}
-        {textBtn.status === 'retry' && (
-          <RetryBtn onClick={() => handleClick()}>{textBtn.label}</RetryBtn>
-        )}
-        {textBtn.status === 'done' && (
-          <SuccessBtn disabled>
-            {textBtn.label}
-            <DoneIcon />
-          </SuccessBtn>
-        )}
-      </div>
-      {scoreText && (
-        <ContentScore>
-          <Score>{scoreText}</Score>
-          <MaxScore>/10</MaxScore>
-        </ContentScore>
-      )}
-    </Card>
+        <MetaRow>
+          {deadline && (
+            <MetaBadge $variant="orange">
+              <CalendarIcon /> {deadline}
+            </MetaBadge>
+          )}
+          {duration && (
+            <MetaBadge $variant="blue">
+              <TimeIcon /> {duration}
+            </MetaBadge>
+          )}
+        </MetaRow>
+
+        <BottomRow>
+          <div>
+            {textBtn.status === 'start' && (
+              <StartBtn onClick={() => handleClick()}>{textBtn.label}</StartBtn>
+            )}
+            {textBtn.status === 'retry' && (
+              <RetryBtn onClick={() => handleClick()}>{textBtn.label}</RetryBtn>
+            )}
+            {textBtn.status === 'done' && (
+              <SuccessBtn disabled>
+                {textBtn.label}
+                <DoneIcon />
+              </SuccessBtn>
+            )}
+          </div>
+        </BottomRow>
+      </Card>
+
+      <ConfirmModal
+        isOpen={showModal} 
+        onClose={() => setShowModal(false)}
+        onConfirm={startTest}
+        title={modalTitle}
+      />
+    </>
   );
 }
