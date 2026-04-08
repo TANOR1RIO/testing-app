@@ -1,8 +1,10 @@
+import { observer } from 'mobx-react-lite';
+import { useEffect, useMemo } from 'react';
 import { TestCard } from '../../components/tests/TestsCard';
 import styled from '@emotion/styled';
-import { useEffect, useMemo, useState } from 'react';
-import { type Attempt, type TestItem } from '../../types/testing';
+import { useStore } from '../UseStore/UseStore';
 import { Loader } from '../../icon/icons';
+import { StudentTestPageVM } from '../../view-Modal/student/StudentTestPageVM';
 
 const Cards = styled.div`
   display: grid;
@@ -11,81 +13,41 @@ const Cards = styled.div`
   padding: 20px;
 `;
 
-const LoaderContainer = styled.div`
+const LoaderWrap = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 400px;
 `;
 
-type AnswerValue = string | string[] | null;
-type AnswerType = 'multiple' | 'single' | 'text';
-export type AnswerState = {
-  type: AnswerType;
-  value: AnswerValue;
-};
+export const StudentTestPage = observer(() => {
+  const root = useStore();
+  const { tests, loading, error, lastAttemptByTest } = root.testsCatalogStore;
 
-export type AnswerMap = Record<number, AnswerState>;
-
-export function StudentTestPage() {
-  const [tests, setTests] = useState<TestItem[]>([]);
-  const [attempts, setAttempts] = useState<Attempt[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const vm = useMemo(() => new StudentTestPageVM(root), [root]);
 
   useEffect(() => {
-    const API_TESTS = '/data/tests.json';
-    const API_ATTEMPTS = '/data/attempts.json';
-    Promise.all([fetch(API_TESTS), fetch(API_ATTEMPTS)])
-      .then(async (res) => {
-        if (!res[0].ok) throw new Error('HTTP!' + res[0].status);
-        if (!res[1].ok) throw new Error('HTTP!' + res[1].status);
-        const t = await res[0].json();
-        const a = await res[1].json();
-        setTests(t);
-        setAttempts(a);
-      })
-      .catch((error) => {
-        setError(error.message);
-      })
-      .finally(() => setLoading(false));
-  }, []);
+    vm.init();
+  }, [vm]);
 
-  const lastAttemptByTest = useMemo(() => {
-    const byTest = new Map<number, Attempt>();
-    const attempt = attempts.filter(a => a.userId === 1);
-
-    for (const a of attempt) {
-      byTest.set(a.testId, a);
-    }
-    return byTest;
-  }, [attempts]);
-
+  if (error) return <h3 style={{ color: 'red' }}>{error}</h3>;
   if (loading) {
     return (
-      <LoaderContainer>
+      <LoaderWrap>
         <Loader />
-      </LoaderContainer>
-    );
-  }
-
-  if (error) {
-    return (
-      <div style={{ textAlign: 'center', padding: '40px', color: 'red' }}>
-        <h3>Ошибка: {error}</h3>
-      </div>
+      </LoaderWrap>
     );
   }
 
   return (
     <Cards>
-      {tests.map((t, i) => (
+      {tests.map((test) => (
         <TestCard
-          test={t}
-          key={i}
-          lastAttempt={lastAttemptByTest.get(t.id)}
+          key={test.id}              
+          test={test}
+          lastAttempt={lastAttemptByTest.get(test.id)}  
         />
       ))}
     </Cards>
   );
-}
+});

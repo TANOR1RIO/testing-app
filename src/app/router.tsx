@@ -8,6 +8,8 @@ import StudentPage from '../pages/student/StudentPage';
 import { StudentTestPage } from '../pages/student/StudentTestPage';
 import { StudentProfilePage } from '../pages/student/StudentProfilePage';
 import { StudentRunTests } from '../pages/student/StudentRunTest';
+import { StudentResultTestPage } from '../pages/student/StudentResultTestPage';
+import { StudentStatisticsPage } from '../pages/student/StudentStatisticsPage';
 
 export const router = createBrowserRouter([
     {
@@ -16,42 +18,51 @@ export const router = createBrowserRouter([
         errorElement: <NotFoundPage />,
         children: [
             { path: "login", element: <LoginPage /> },
-            { path: "student", element: <StudentLayout /> , 
+            { 
+                path: "student", 
+                element: <StudentLayout />,
                 children: [
-                {
-                    index: true, 
-                    element: <StudentPage /> 
-                },
-                {
-                    path: "tests", 
-                    element: <StudentTestPage /> 
-                },
-                {
-                    path: "tests/:id",  // ← Измените с "test/:id" на "tests/:id"
-                    element: <StudentRunTests />
-                },
-                {
-                    path: "statistics", 
-                    element: <h2>Статичтика студента</h2>
-                },
-                {
-                    path: "profile", 
-                    element: <StudentProfilePage/>
-                }
-            ]},
-            { path: "admin", element: <AdminLayout /> ,
-                children: [
-                {
-                    index: true, 
-                    element: <h2> Admin dashboard</h2> 
-                },
-                {
-                    path: "settings", 
-                    element: <h2> Admin SETTINGS</h2> 
-                }
+                    {
+                        index: true, 
+                        element: <StudentPage /> 
+                    },
+                    {
+                        path: "tests", 
+                        element: <StudentTestPage /> 
+                    },
+                    {
+                        path: "tests/:id",
+                        element: <StudentRunTests />
+                    },
+                    {
+                        path: "tests/:id/result",
+                        element: <StudentResultTestPage />
+                    },
+                    {
+                        path: "statistics", 
+                        element: <StudentStatisticsPage/>
+                    },
+                    {
+                        path: "profile", 
+                        element: <StudentProfilePage/>
+                    }
                 ]
             },
-            { path:'*' , element: <NotFoundPage />}
+            { 
+                path: "admin", 
+                element: <AdminLayout />,
+                children: [
+                    {
+                        index: true, 
+                        element: <h2>Admin dashboard</h2> 
+                    },
+                    {
+                        path: "settings", 
+                        element: <h2>Admin SETTINGS</h2> 
+                    }
+                ]
+            },
+            { path:'*', element: <NotFoundPage /> }
         ],
     },
 ]);

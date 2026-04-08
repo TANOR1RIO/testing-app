@@ -1,5 +1,5 @@
-import { useLocation, useParams } from "react-router";
-import {QuestionBlock} from "../../components/tests/QuestionBlock";
+import { useLocation, useParams, useNavigate } from "react-router-dom"; // 👈 добавили useNavigate
+import { QuestionBlock } from "../../components/tests/QuestionBlock";
 import { Timer } from "../../components/Timer";
 import styled from "@emotion/styled";
 import { useEffect, useMemo, useState } from "react";
@@ -9,7 +9,7 @@ import type { Question, TestItem } from "../../types/testing";
 import type { AnswerMap } from "./StudentTestPage"; 
 import { ConfirmModal } from "../../components/tests/ConfirModal";
 import { checkQuestion } from "../../utils/checkQuestion";
-
+import { ResultBlock } from "../../components/tests/ResultBlock";
 
 const LoaderWrap = styled.div`
   display: flex;
@@ -31,10 +31,13 @@ export function StudentRunTests() {
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  
   const location = useLocation();
   const { id } = useParams();
   const testId = Number(id);
+  const navigate = useNavigate();
 
+  // Загрузка вопросов
   useEffect(() => {
     const API_URL = '/data/questions.json';
     fetch(API_URL)
@@ -44,7 +47,9 @@ export function StudentRunTests() {
       })
       .then(todos => setQuestions(todos))
       .catch(error => {
-        setError(error.message);
+        setError(
+          error instanceof Error ? error.message : 'Неизвестная ошибка'
+        );
       })
       .finally(() => setLoading(false));
   }, []);
@@ -63,11 +68,11 @@ export function StudentRunTests() {
         setTestMeta(found ?? null);
       })
       .catch(error => {
-        setError(error.message);
+        setError(
+          error instanceof Error ? error.message : 'Неизвестная ошибка'
+        );
       });
   }, [testId]);
-
-  
 
   useEffect(() => {
     if (filtered.length === 0) return;
@@ -94,56 +99,67 @@ export function StudentRunTests() {
       } | null
     )?.durationSec ?? 600;
     
-  function handleChange(id: number, value: string | string[] | null){
+  function handleChange(qId: number, value: string | string[] | null){
     setAnswers(prev => ({
       ...prev,
-      [id]: {
-        type: prev[id]?.type || 'text',
+      [qId]: {
+        type: prev[qId]?.type || 'text',
         value
       }
     }))
   }
-
-  const answeredCount = useMemo (() => {
-  return Object.values(answers).filter((answ) => {
-    if (answ.type === 'single') return answ.value !== null;
-    if (answ.type === 'multiple')
-      return Array.isArray(answ.value) && answ.value.length > 0;
-    if (answ.type === 'text') return typeof answ.value === 'string' && answ.value.trim() !== '';
-  }).length;
-  },[answers]);
-
-  const totalCount = filtered.length
-  const allAnswered = totalCount === answeredCount;
-
-  function handleSubmit() {
-  const resultAnsw = {
-    testId,
-    answers,
-    timeSpent: durationSec, //заглушка
-  };
-  console.log('------ RESULT ------');
-  console.log('attempt:', resultAnsw);
-
-  console.log('Результат', answeredCount, '/', totalCount);
-}
-
-function confirFinish(){
-  setShowModal(false)
-  handleSubmit()
-}
-
-const result = useMemo(() => {
-    return filtered.map(q => checkQuestion({ 
+  
+  const { earnedPoints, maxPoints } = useMemo(() => {
+    const results = filtered.map(q => checkQuestion({ 
         q, 
         answ: answers[q.id],
-        status: 'partial'
     }));
-}, [filtered, answers]);
+    
+    const earned = results.reduce((sum, r) => sum + r.currentAnsw, 0);
+    const max = results.reduce((sum, r) => sum + r.max, 0);
+    
+    return { earnedPoints: earned, maxPoints: max };
+  }, [filtered, answers]);
 
-console.log(result);
+  // 🔹 Вывод баллов в консоль
+  useEffect(() => {
+    if (filtered.length === 0) return;
+    console.log(`Баллы: ${earnedPoints} / ${maxPoints}`);
+  }, [earnedPoints, maxPoints, filtered.length]);
 
-const title = allAnswered ? "Хотите закончить тестирование" : "Не все задания выполненны, хотите закончить тестирование"
+  function handleSubmit() {
+    console.log(`Баллы: ${earnedPoints} / ${maxPoints}`);
+  }
+
+function confirFinish(){
+    setShowModal(false);
+    handleSubmit();
+    
+    navigate(`/student/tests/${id}/result`, { 
+        state: { 
+            score: earnedPoints, 
+            max: maxPoints,
+            time: testMeta?.durationSec ?? 120,          
+            attemptAllowed: testMeta?.attemptsAllowed ?? 0, 
+            testId: testId 
+        } 
+    });
+}
+
+  const answeredCount = useMemo (() => {
+    return Object.values(answers).filter((answ) => {
+      if (answ.type === 'single') return answ.value !== null;
+      if (answ.type === 'multiple')
+        return Array.isArray(answ.value) && answ.value.length > 0;
+      if (answ.type === 'text') return typeof answ.value === 'string' && answ.value.trim() !== '';
+    }).length;
+  }, [answers]);
+
+  const totalCount = filtered.length;
+  const allAnswered = totalCount === answeredCount;
+  const title = allAnswered 
+    ? "Хотите закончить тестирование" 
+    : "Не все задания выполнены, хотите закончить тестирование";
 
   if (Number.isNaN(testId))
     return (
@@ -187,6 +203,7 @@ const title = allAnswered ? "Хотите закончить тестирова�
       </div>
     );
     
+  
   return (
     <div>
       <StudentHeader title="Тест" />
@@ -197,16 +214,33 @@ const title = allAnswered ? "Хотите закончить тестирова�
               key={q.id} 
               question={q} 
               onChange={handleChange} 
-              value={answers[q.id]?.value ?? null} 
+              value={answers[q.id]?.value ?? null}
             />
           ))}
         </div>
-        <Timer
-          durationSec={durationSec}
-          onFinish={() => alert('Тест закончен')}
+        
+        <div css={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <ResultBlock score={earnedPoints} max={maxPoints} />
+          
+          <Timer
+            durationSec={durationSec}
+            onFinish={() => {
+                navigate(`/student/tests/${id}/result`, { 
+                    state: { 
+                        score: earnedPoints, 
+                        max: maxPoints,
+                        time: durationSec,                        
+                        attemptAllowed: testMeta?.attemptsAllowed ?? 0,
+                        testId: testId 
+                    } 
+                });
+            }}
         />
+        </div>
+        
         <button onClick={() => setShowModal(true)}>Отправить</button>
       </Grid>
+      
       <ConfirmModal
         isOpen={showModal} 
         labelDone={"Завершить"}

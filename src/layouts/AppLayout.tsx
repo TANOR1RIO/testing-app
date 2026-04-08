@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
+import { StoreProvider } from '../store/StoreProvider/StoreProvider';
 
 export default function AppLayout() {
   return (
@@ -11,7 +12,9 @@ export default function AppLayout() {
         </nav>
       </header>
       <main>
-        <Outlet />
+        <StoreProvider>
+          <Outlet />
+        </StoreProvider>
       </main>
       <footer>© 2025</footer>
     </div>

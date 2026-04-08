@@ -1,6 +1,7 @@
 import styled from "@emotion/styled";
 import { useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { BackIcon, SearchIcon } from "../../icon/icons";
 
 const Header = styled.header`
@@ -114,7 +115,12 @@ const Nick = styled.div`
   max-width: 120px;
 `;
 
-export function StudentHeader({ title }: { title: string }) {
+type StudentHeaderProps = {
+  title: string;
+  onBack?: () => void;
+};
+
+export function StudentHeader({ title, onBack }: StudentHeaderProps) {
   const navigate = useNavigate();
   const [searchOpen, setSearchOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -134,7 +140,7 @@ export function StudentHeader({ title }: { title: string }) {
     setSearchOpen(false);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Escape") {
       handleCloseSearch();
     }
@@ -143,7 +149,10 @@ export function StudentHeader({ title }: { title: string }) {
   return (
     <Header>
       <Left>
-        <BackButton onClick={() => navigate(-1)} aria-label="Назад">
+        <BackButton
+          onClick={onBack ?? (() => navigate(-1))}
+          aria-label="Назад"
+        >
           <BackIcon />
         </BackButton>
         <Title>{title}</Title>

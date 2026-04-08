@@ -1,5 +1,6 @@
 import styled from '@emotion/styled';
 import Modal from "../../modal/modal";
+import type { ReactNode } from 'react';
 
 const Button = styled.button<{ tone?: string }>`
   padding: 12px 24px;
@@ -29,8 +30,8 @@ type ConfirmModalProps = {
   onClose: () => void;
   onConfirm: () => void;
   title: string;
-  labelClose?: React.ReactNode; 
-  labelDone?: React.ReactNode;
+  labelClose?: ReactNode; 
+  labelDone?: ReactNode;
 };
 
 export function ConfirmModal(props: ConfirmModalProps) {

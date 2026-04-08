@@ -24,7 +24,7 @@ const TimerBox = styled.div<{ danger: boolean }>`
 `;
 
 type TimerProps = {
-    durationSec?: number | undefined;
+    durationSec: number;
     onFinish: () => void;
 }
 

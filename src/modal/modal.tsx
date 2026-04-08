@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import styled from "@emotion/styled";
+import type { ReactNode } from "react";
 
 const BGModal = styled.div`
   position: fixed;
@@ -125,8 +126,8 @@ type ModalProps = {
   isOpen: boolean;
   title: string;
   onClose: () => void;
-  children?: React.ReactNode;
-  foot?: React.ReactNode;
+  children?: ReactNode;
+  foot?: ReactNode;
 };
 
 export default function Modal({ isOpen, title, onClose, children, foot }: ModalProps) {
